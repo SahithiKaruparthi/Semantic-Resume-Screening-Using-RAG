@@ -20,6 +20,7 @@ class Config:
     
     # Database Configuration
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///recruitment.db")
+    DATABASE_PATH: str = os.path.join(os.path.dirname(__file__), "db", "resume_screening.db")
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
     
     # File Storage
@@ -32,6 +33,15 @@ class Config:
     EMBEDDING_DEVICE: str = "cuda" if os.getenv("USE_GPU", "False").lower() == "true" else "cpu"
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     LLM_MODEL: str = "llama3-70b-8192"  # Groq model name
+    
+    @classmethod
+    def validate_groq_key(cls):
+        """Validate that GROQ API key is set"""
+        if not cls.GROQ_API_KEY:
+            raise ValueError(
+                "GROQ_API_KEY environment variable is not set. "
+                "Please run 'python setup_env.py' to configure your API key."
+            )
     
     # Matching Thresholds
     MATCH_THRESHOLD: float = 0.8  # 80% match required for shortlisting

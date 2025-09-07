@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from './Navbar';
+import { useAuth } from '../contexts/AuthContext';
 
 const ApplicationForm = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [job, setJob] = useState(null);
   const [resumes, setResumes] = useState([]);
@@ -20,12 +22,12 @@ const ApplicationForm = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [jobResponse, resumesResponse] = await Promise.all([
-          axios.get(`/api/jobs/${jobId}`),
-          axios.get('/api/resumes')
-        ]);
-        
+        // Fetch job details
+        const jobResponse = await axios.get(`/api/jobs/${jobId}`);
         setJob(jobResponse.data);
+        
+        // Fetch user's resumes
+        const resumesResponse = await axios.get('/api/resumes');
         setResumes(resumesResponse.data);
         
         if (resumesResponse.data.length > 0) {
@@ -34,7 +36,7 @@ const ApplicationForm = () => {
         
         setLoading(false);
       } catch (err) {
-        setError('Failed to load required data');
+        setError(err.response?.data?.message || 'Failed to load required data');
         setLoading(false);
       }
     };
@@ -47,7 +49,19 @@ const ApplicationForm = () => {
   };
   
   const handleFileChange = (e) => {
-    setNewResume(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setError('File size should be less than 5MB');
+        return;
+      }
+      if (!file.type.includes('pdf')) {
+        setError('Only PDF files are allowed');
+        return;
+      }
+      setNewResume(file);
+      setError('');
+    }
   };
   
   const handleSubmit = async (e) => {
@@ -65,7 +79,8 @@ const ApplicationForm = () => {
         
         const resumeResponse = await axios.post('/api/resumes', formData, {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
         
@@ -76,6 +91,10 @@ const ApplicationForm = () => {
       const applicationResponse = await axios.post('/api/applications', {
         job_id: jobId,
         resume_id: resumeId
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
       
       // Redirect to application status page
@@ -124,7 +143,7 @@ const ApplicationForm = () => {
                 )}
                 
                 <div className="form-group">
-                  <label>Or upload a new resume (PDF only):</label>
+                  <label>Or upload a new resume (PDF only, max 5MB):</label>
                   <input 
                     type="file" 
                     accept=".pdf" 

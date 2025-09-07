@@ -3,13 +3,13 @@
 
 import os
 import PyPDF2
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
+
 
 def parse_resume(file_path):
     """
@@ -52,16 +52,17 @@ def parse_resume(file_path):
     prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
 
     
-    # Initialize the language model
-    llm = ChatGroq(
-        temperature=0.3,
-        groq_api_key=os.getenv("GROQ_API_KEY"),
-        model_name="llama3-8b-8192",  # Or "llama3-70b-8192"
-    )
+    # Initialize the language model (lazy initialization)
+    def get_llm():
+        return ChatGroq(
+            temperature=0.3,
+            groq_api_key=os.getenv("GROQ_API_KEY"),
+            model_name="openai/gpt-oss-20b"
+        )
     
     # Create a retrieval chain
     qa = RetrievalQA.from_chain_type(
-        llm=llm,
+        llm=get_llm(),
         chain_type="stuff",
         retriever=db.as_retriever(),
     )
@@ -87,6 +88,7 @@ def parse_resume(file_path):
     }
     
     return parsed_data
+
 
 def extract_text_from_pdf(file_path):
     """

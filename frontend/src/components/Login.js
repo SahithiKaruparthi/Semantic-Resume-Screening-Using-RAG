@@ -1,7 +1,7 @@
 // src/components/Login.js
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 
 const Login = () => {
@@ -12,6 +12,8 @@ const Login = () => {
   
   const { login, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || (user?.role === 'admin' ? '/admin' : '/');
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,8 +23,7 @@ const Login = () => {
     const result = await login(username, password);
     
     if (result.success) {
-      // Redirect based on user role
-      navigate(result.userData.role === 'admin' ? '/admin' : '/');
+      navigate(from);
     } else {
       setError(result.message);
       setLoading(false);

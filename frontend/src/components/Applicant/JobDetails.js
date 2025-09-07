@@ -1,12 +1,15 @@
 // src/components/applicant/JobDetails.js
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from './Navbar';
+import { useAuth } from '../contexts/AuthContext';
 
 const JobDetails = () => {
   const { jobId } = useParams();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [job, setJob] = useState(null);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,9 +22,15 @@ const JobDetails = () => {
         const jobResponse = await axios.get(`/api/jobs/${jobId}`);
         setJob(jobResponse.data);
         
-        // Check if user has already applied
-        const applicationsResponse = await axios.get('/api/applications');
-        setApplications(applicationsResponse.data);
+        // Only fetch applications if user is authenticated
+        if (isAuthenticated) {
+          try {
+            const applicationsResponse = await axios.get('/api/applications');
+            setApplications(applicationsResponse.data);
+          } catch (err) {
+            console.error('Failed to fetch applications:', err);
+          }
+        }
         
         setLoading(false);
       } catch (err) {
@@ -31,7 +40,7 @@ const JobDetails = () => {
     };
     
     fetchJobDetails();
-  }, [jobId]);
+  }, [jobId, isAuthenticated]);
   
   const hasApplied = applications.some(app => app.job_id === parseInt(jobId));
   
@@ -39,6 +48,14 @@ const JobDetails = () => {
     return description.split('\n').map((paragraph, index) => (
       <p key={index}>{paragraph}</p>
     ));
+  };
+  
+  const handleApply = () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/jobs/${jobId}` } });
+    } else {
+      navigate(`/apply/${jobId}`);
+    }
   };
   
   return (
@@ -62,13 +79,17 @@ const JobDetails = () => {
             </div>
             
             <div className="job-actions">
-              {hasApplied ? (
-                <div className="already-applied">
-                  You have already applied for this position.
-                  <Link to="/my-applications" className="view-applications">View your applications</Link>
-                </div>
+              {isAuthenticated ? (
+                hasApplied ? (
+                  <div className="already-applied">
+                    You have already applied for this position.
+                    <Link to="/my-applications" className="view-applications">View your applications</Link>
+                  </div>
+                ) : (
+                  <button onClick={handleApply} className="apply-button">Apply Now</button>
+                )
               ) : (
-                <Link to={`/apply/${jobId}`} className="apply-button">Apply Now</Link>
+                <button onClick={handleApply} className="apply-button">Login to Apply</button>
               )}
               <Link to="/" className="back-button">Back to Jobs</Link>
             </div>

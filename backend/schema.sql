@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS applications (
   application_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   status TEXT CHECK(status IN ('pending', 'shortlisted', 'rejected', 'interviewed')) DEFAULT 'pending',
   match_score FLOAT,
+  match_analysis TEXT,
   FOREIGN KEY (applicant_id) REFERENCES users(id),
   FOREIGN KEY (job_id) REFERENCES jobs(id),
   FOREIGN KEY (resume_id) REFERENCES resumes(id),

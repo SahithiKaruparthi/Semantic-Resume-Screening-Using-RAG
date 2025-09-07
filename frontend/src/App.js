@@ -8,6 +8,7 @@ import ApplicantDashboard from './components/Applicant/Dashboard';
 import AdminDashboard from './components/Admin/Dashboard';
 import JobForm from './components/Admin/JobForm';
 import JobDetails from './components/Applicant/JobDetails';
+import AdminJobDetails from './components/Admin/JobDetails';
 import ApplicationForm from './components/Applicant/ApplicationForm';
 import ApplicationsList from './components/Applicant/ApplicationsList';
 import AdminApplicationsList from './components/Admin/ApplicationsList';
@@ -43,11 +44,7 @@ function App() {
                 <ApplicantDashboard />
               </ProtectedRoute>
             } />
-            <Route path="/jobs/:jobId" element={
-              <ProtectedRoute requiredRole="applicant">
-                <JobDetails />
-              </ProtectedRoute>
-            } />
+            <Route path="/jobs/:jobId" element={<JobDetails />} />
             <Route path="/apply/:jobId" element={
               <ProtectedRoute requiredRole="applicant">
                 <ApplicationForm />
@@ -66,6 +63,16 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/admin/jobs/new" element={
+              <ProtectedRoute requiredRole="admin">
+                <JobForm />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/jobs/:jobId" element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminJobDetails />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/jobs/:jobId/edit" element={
               <ProtectedRoute requiredRole="admin">
                 <JobForm />
               </ProtectedRoute>

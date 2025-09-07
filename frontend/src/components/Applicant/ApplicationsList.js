@@ -1,9 +1,10 @@
 // src/components/applicant/ApplicationsList.js
 
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from './Navbar';
+import { useAuth } from '../contexts/AuthContext';
 
 const ApplicationsList = () => {
   const [applications, setApplications] = useState([]);
@@ -11,6 +12,9 @@ const ApplicationsList = () => {
   const [error, setError] = useState('');
   
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  
   const successMessage = location.state?.success && (
     <div className="success-message">
       Application submitted successfully! Your match score: {location.state.matchScore}%
@@ -23,19 +27,28 @@ const ApplicationsList = () => {
   );
   
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: '/my-applications' } });
+      return;
+    }
+
     const fetchApplications = async () => {
       try {
-        const response = await axios.get('/api/applications');
+        const response = await axios.get('/api/applications', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         setApplications(response.data);
         setLoading(false);
       } catch (err) {
-        setError('Failed to fetch your applications');
+        setError(err.response?.data?.message || 'Failed to fetch your applications');
         setLoading(false);
       }
     };
     
     fetchApplications();
-  }, []);
+  }, [isAuthenticated, navigate]);
   
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -65,6 +78,9 @@ const ApplicationsList = () => {
         ) : applications.length === 0 ? (
           <div className="no-applications">
             You haven't applied for any jobs yet.
+            <button onClick={() => navigate('/')} className="browse-jobs-button">
+              Browse Jobs
+            </button>
           </div>
         ) : (
           <div className="applications-list">
